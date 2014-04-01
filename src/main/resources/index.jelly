@@ -1,0 +1,6 @@
+<!--
+  This view is used to render the installed plugins page.
+-->
+<div>
+  Set labels to slave according to JENKINS_SLAVE_LABELS variable
+</div>

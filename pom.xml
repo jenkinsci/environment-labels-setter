@@ -1,0 +1,36 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.jenkins-ci.plugins</groupId>
+    <artifactId>plugin</artifactId>
+    <version>1.480</version>
+  </parent>
+
+  <name>Environment labels setter</name>
+  <artifactId>environment-labels-setter</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>hpi</packaging>
+  <url>https://wiki.jenkins-ci.org/display/JENKINS/Environment+labels+setter</url>
+  
+   <developers>
+    <developer>
+      <id>lvotypko</id>
+      <name>Lucie Votypkova</name>
+      <email>lvotypko@redhat.com</email>
+    </developer>
+  </developers>
+  
+  <pluginRepositories>
+        <pluginRepository>
+            <id>repo.jenkins-ci.org</id>
+            <url>http://repo.jenkins-ci.org/public/</url>
+        </pluginRepository>
+  </pluginRepositories>
+    
+     <scm>
+    <connection>scm:git:ssh://github.com/jenkinsci/environment-labels-setter.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/jenkinsci/environment-labels-setter.git</developerConnection>
+    <url>https://github.com/jenkinsci/environment-labels-setter.git</url>
+  </scm>
+  
+</project>
