@@ -36,15 +36,15 @@ public class EnvironmentLabelsFinder extends LabelFinder {
     public Collection<LabelAtom> findLabels(Node node) {
         Computer computer = node.toComputer();
         if(computer == null || node.getChannel()==null)
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         if(node.getLabelString().isEmpty()){
             String labelsInString= cashedLabels.get(node);
             if(labelsInString==null)
-                return Collections.EMPTY_LIST;
+                return Collections.emptyList();
             Set<LabelAtom> labels = Label.parse(labelsInString);
             return labels;
         }
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
 
     }
 
