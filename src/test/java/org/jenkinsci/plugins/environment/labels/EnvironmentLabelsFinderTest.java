@@ -9,6 +9,7 @@ import hudson.model.Node;
 import hudson.model.Slave;
 import hudson.model.labels.LabelAtom;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -28,30 +29,24 @@ public class EnvironmentLabelsFinderTest {
 
     @Test
     public void contributeAllLabels() throws Exception {
-       Slave contributingSlave = j.createOnlineSlave(null, new EnvVars(
-               "JENKINS_SLAVE_LABELS", "testlabel1 testlabel2"
-       ));
-       contributingSlave.getNodeProperties().add(new PerNodeConfig());
+       Slave slave = slaveContributing("testlabel1 testlabel2");
+       allowLabelContribution(slave);
 
-       assertEquals(labels("slave0", "testlabel1", "testlabel2"), contributingSlave.getAssignedLabels());
+       assertEquals(labels("slave0", "testlabel1", "testlabel2"), slave.getAssignedLabels());
     }
 
     @Test
     public void appendLabels() throws Exception {
-       Slave slave = j.createOnlineSlave(null, new EnvVars(
-               "JENKINS_SLAVE_LABELS", "env_label common_label"
-       ));
+       Slave slave = slaveContributing("env_label common_label");
        slave.setLabelString("hardcoded_label common_label");
-       slave.getNodeProperties().add(new PerNodeConfig());
+       allowLabelContribution(slave);
 
        assertEquals(labels("slave0", "env_label", "common_label", "hardcoded_label"), slave.getAssignedLabels());
     }
 
     @Test
     public void ignoreLabelsForNodesNotConfiguredToAccept() throws Exception {
-        Slave slave = j.createOnlineSlave(null, new EnvVars(
-                "JENKINS_SLAVE_LABELS", "env_label common_label"
-        ));
+        Slave slave = slaveContributing("env_label common_label");
         slave.setLabelString("hardcoded_label common_label");
 
         assertEquals(labels("slave0", "hardcoded_label", "common_label"), slave.getAssignedLabels());
@@ -61,20 +56,45 @@ public class EnvironmentLabelsFinderTest {
     public void doNotTouchLabelsWhenNothingIsContributed() throws Exception {
         Slave slave = j.createOnlineSlave();
         slave.setLabelString("hardcoded_label");
+        allowLabelContribution(slave);
 
         assertEquals(labels("slave0", "hardcoded_label"), slave.getAssignedLabels());
     }
 
     @Test
+    public void notContributingSlavesDoesNotNeedCacheEntry() throws Exception {
+        Slave noEnvvarSlave = j.createOnlineSlave();
+        noEnvvarSlave.setLabelString("hardcoded_label");
+        allowLabelContribution(noEnvvarSlave);
+
+        assertEquals(null, getCachedLabels().get(noEnvvarSlave));
+    }
+
+    @Test
     public void testRemoveComputer() throws Exception{
-        Map<Node, String> cashedLabels = LabelFinder.all().get(EnvironmentLabelsFinder.class).getCashedLabels();
-        Slave slave1 = j.createOnlineSlave();
-        Slave slave2 = j.createOnlineSlave();
+        Map<Node, String> cashedLabels = getCachedLabels();
+        Slave slave1 = slaveContributing("a");
+        allowLabelContribution(slave1);
+        Slave slave2 = slaveContributing("b");
+        allowLabelContribution(slave2);
+
         assertTrue("All slaves should be cashed.", cashedLabels.containsKey(slave1) && cashedLabels.containsKey(slave2));
         Jenkins.getInstance().removeNode(slave2);
-        cashedLabels = LabelFinder.all().get(EnvironmentLabelsFinder.class).getCashedLabels();
+        cashedLabels = getCachedLabels();
         assertFalse("Cashed Labels should not contains deleted slave.", cashedLabels.containsKey(slave2));
         assertTrue("Cashed Labels should contains " + slave1.getDisplayName() + ".", cashedLabels.containsKey(slave1));
+    }
+
+    private Slave slaveContributing(String labels) throws Exception {
+        return j.createOnlineSlave(null, new EnvVars("JENKINS_SLAVE_LABELS", labels));
+    }
+
+    private void allowLabelContribution(Slave slave) throws IOException {
+        slave.getNodeProperties().add(new PerNodeConfig());
+    }
+
+    private Map<Node, String> getCachedLabels() {
+        return LabelFinder.all().get(EnvironmentLabelsFinder.class).getCashedLabels();
     }
 
     private Set<LabelAtom> labels(String... atoms) {

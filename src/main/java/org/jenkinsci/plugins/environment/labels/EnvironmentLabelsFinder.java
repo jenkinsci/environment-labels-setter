@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.environment.labels;
 
 import hudson.Extension;
+import hudson.Util;
 import hudson.model.LabelFinder;
 import hudson.model.TaskListener;
 import hudson.model.Computer;
@@ -32,7 +33,7 @@ public class EnvironmentLabelsFinder extends LabelFinder {
     /**
      * Label strings contributed from envvar in their raw form.
      */
-    private Map<Node, String> cashedLabels = new ConcurrentHashMap<Node, String>();
+    private final Map<Node, String> cashedLabels = new ConcurrentHashMap<Node, String>();
 
     // for testing only
     /*package*/ Map<Node,String> getCashedLabels(){
@@ -66,12 +67,9 @@ public class EnvironmentLabelsFinder extends LabelFinder {
             if(c instanceof SlaveComputer){
                 try {
                     SlaveComputer slaveComputer = (SlaveComputer) c;
-                    String labels = slaveComputer.getEnvironment().get("JENKINS_SLAVE_LABELS");
-                    EnvironmentLabelsFinder finder = LabelFinder.all().get(EnvironmentLabelsFinder.class);
-                    if(labels!=null){
-                        finder.cashedLabels.put(c.getNode(), labels);
-                    }else{
-                        finder.cashedLabels.put(c.getNode(), "");
+                    String labels = Util.fixEmpty(slaveComputer.getEnvironment().get("JENKINS_SLAVE_LABELS"));
+                    if (labels != null) {
+                        finder().cashedLabels.put(c.getNode(), labels);
                     }
                 } catch (IOException e) {
                     Logger.getLogger(getClass().getName()).log(Level.WARNING, "Unable to load slave environment", e);
@@ -83,7 +81,7 @@ public class EnvironmentLabelsFinder extends LabelFinder {
 
         @Override
         public void onConfigurationChange(){
-            EnvironmentLabelsFinder finder = LabelFinder.all().get(EnvironmentLabelsFinder.class);
+            EnvironmentLabelsFinder finder = finder();
 
             Set<Node> cachedNodes = new HashSet<Node>(finder.cashedLabels.keySet());
             List<Node> realNodes = Jenkins.getInstance().getNodes();
@@ -92,6 +90,10 @@ public class EnvironmentLabelsFinder extends LabelFinder {
                     finder.cashedLabels.remove(node);
                 }
             }
+        }
+
+        private EnvironmentLabelsFinder finder() {
+            return LabelFinder.all().get(EnvironmentLabelsFinder.class);
         }
     }
 }
