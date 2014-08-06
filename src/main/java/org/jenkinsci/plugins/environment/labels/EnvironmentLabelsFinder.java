@@ -2,17 +2,24 @@ package org.jenkinsci.plugins.environment.labels;
 
 import hudson.Extension;
 import hudson.model.LabelFinder;
+import hudson.model.TaskListener;
 import hudson.model.Computer;
 import hudson.model.Label;
 import hudson.model.Node;
 import hudson.model.labels.LabelAtom;
+import hudson.slaves.ComputerListener;
+import hudson.slaves.SlaveComputer;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import jenkins.model.Jenkins;
 
@@ -26,10 +33,6 @@ public class EnvironmentLabelsFinder extends LabelFinder {
      * Label strings contributed from envvar in their raw form.
      */
     private Map<Node, String> cashedLabels = new ConcurrentHashMap<Node, String>();
-
-    public void putLabels(Node node, String labelsInString){
-        cashedLabels.put(node, labelsInString);
-    }
 
     // for testing only
     /*package*/ Map<Node,String> getCashedLabels(){
@@ -52,12 +55,42 @@ public class EnvironmentLabelsFinder extends LabelFinder {
         return Label.parse(labelsInString);
     }
 
-    public void updateComputers(){
-        Set<Node> nodes = new HashSet<Node>();
-        nodes.addAll(cashedLabels.keySet());
-        for(Node node: nodes){
-            if(!Jenkins.getInstance().getNodes().contains(node)){
-                cashedLabels.remove(node);
+    /**
+     * @author Lucie Votypkova
+     */
+    @Extension
+    public static class SlaveVariableLabelListener extends ComputerListener {
+
+        @Override
+        public void onOnline(Computer c, TaskListener taskListener) {
+            if(c instanceof SlaveComputer){
+                try {
+                    SlaveComputer slaveComputer = (SlaveComputer) c;
+                    String labels = slaveComputer.getEnvironment().get("JENKINS_SLAVE_LABELS");
+                    EnvironmentLabelsFinder finder = LabelFinder.all().get(EnvironmentLabelsFinder.class);
+                    if(labels!=null){
+                        finder.cashedLabels.put(c.getNode(), labels);
+                    }else{
+                        finder.cashedLabels.put(c.getNode(), "");
+                    }
+                } catch (IOException e) {
+                    Logger.getLogger(getClass().getName()).log(Level.WARNING, "Unable to load slave environment", e);
+                } catch (InterruptedException e) {
+                    Logger.getLogger(getClass().getName()).log(Level.WARNING, "Interrupted loading slave environment", e);
+                }
+            }
+        }
+
+        @Override
+        public void onConfigurationChange(){
+            EnvironmentLabelsFinder finder = LabelFinder.all().get(EnvironmentLabelsFinder.class);
+
+            Set<Node> cachedNodes = new HashSet<Node>(finder.cashedLabels.keySet());
+            List<Node> realNodes = Jenkins.getInstance().getNodes();
+            for(Node node: cachedNodes){
+                if(!realNodes.contains(node)){
+                    finder.cashedLabels.remove(node);
+                }
             }
         }
     }
