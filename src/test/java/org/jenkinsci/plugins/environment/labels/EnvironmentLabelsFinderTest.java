@@ -1,28 +1,23 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.jenkinsci.plugins.environment.labels;
 
-
-import java.util.Map;
-import hudson.model.Slave;
-import hudson.model.Node;
-import jenkins.model.Jenkins;
-import hudson.model.labels.LabelAtom;
-import java.util.Collection;
 import hudson.EnvVars;
-import hudson.slaves.EnvironmentVariablesNodeProperty;
-import java.io.IOException;
 import hudson.model.LabelFinder;
 import hudson.model.TaskListener;
+import hudson.model.Node;
+import hudson.model.Slave;
+import hudson.model.labels.LabelAtom;
 import hudson.slaves.ComputerListener;
-import org.jvnet.hudson.test.HudsonTestCase;
-import org.junit.Test;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+
+import jenkins.model.Jenkins;
+
+import org.junit.Test;
+import org.jvnet.hudson.test.HudsonTestCase;
 
 /**
- *
  * @author lucinka
  */
 public class EnvironmentLabelsFinderTest extends HudsonTestCase{
@@ -43,7 +38,7 @@ public class EnvironmentLabelsFinderTest extends HudsonTestCase{
        assertFalse("Computer should not contains label testlabel2.", labels.contains(Jenkins.getInstance().getLabelAtom("testlabel2")));
 
     }
-    
+
     @Test
     public void testRemoveComputer() throws Exception{
         Map<Node, String> cashedLabels = LabelFinder.all().get(EnvironmentLabelsFinder.class).getCashedLabels();
@@ -55,7 +50,7 @@ public class EnvironmentLabelsFinderTest extends HudsonTestCase{
         assertFalse("Cashed Labels should not contains deleted slave.", cashedLabels.containsKey(slave2));
         assertTrue("Cashed Labels should contains " + slave1.getDisplayName() + ".", cashedLabels.containsKey(slave1));
     }
-    
+
 //    @Test
 //    public void testRenameComputer() throws Exception{
 //        EnvVars vars = new EnvVars();
@@ -65,7 +60,7 @@ public class EnvironmentLabelsFinderTest extends HudsonTestCase{
 //        HtmlForm form = createWebClient().goTo("computer/" + slave1.getDisplayName() + "/configure").getFormByName("config");
 //        form.getInputByName("_.name").setValueAttribute("renamed");
 //        submit(form);
-//        assertTrue("Renaming should not change environmnet labels.", LabelFinder.all().get(EnvironmentLabelsFinder.class).findLabels(Jenkins.getInstance().getNode("renamed")).contains(Jenkins.getInstance().getLabelAtom("testlabe1")));         
+//        assertTrue("Renaming should not change environmnet labels.", LabelFinder.all().get(EnvironmentLabelsFinder.class).findLabels(Jenkins.getInstance().getNode("renamed")).contains(Jenkins.getInstance().getLabelAtom("testlabe1")));
 //    }
-    
+
 }
