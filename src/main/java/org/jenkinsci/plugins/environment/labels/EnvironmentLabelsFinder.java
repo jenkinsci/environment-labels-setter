@@ -22,7 +22,10 @@ import jenkins.model.Jenkins;
 @Extension
 public class EnvironmentLabelsFinder extends LabelFinder {
 
-    private Map<Node,String> cashedLabels = new ConcurrentHashMap<Node, String>();
+    /**
+     * Label strings contributed from envvar.
+     */
+    private Map<Node, String> cashedLabels = new ConcurrentHashMap<Node, String>();
 
     public void putLabels(Node node, String labelsInString){
         cashedLabels.put(node, labelsInString);
@@ -37,15 +40,17 @@ public class EnvironmentLabelsFinder extends LabelFinder {
         Computer computer = node.toComputer();
         if(computer == null || node.getChannel()==null)
             return Collections.emptyList();
-        if(node.getLabelString().isEmpty()){
-            String labelsInString= cashedLabels.get(node);
-            if(labelsInString==null)
-                return Collections.emptyList();
-            Set<LabelAtom> labels = Label.parse(labelsInString);
-            return labels;
-        }
-        return Collections.emptyList();
 
+        // Iff configured to contribute label merge them. Do nothing otherwise.
+        PerNodeConfig config = node.getNodeProperties().get(PerNodeConfig.class);
+        if (config == null) return Collections.emptyList();
+
+        String labelsInString = cashedLabels.get(node);
+        if(labelsInString==null)
+            return Collections.emptyList();
+        Set<LabelAtom> labels = Label.parse(labelsInString);
+
+        return labels;
     }
 
     public void updateComputers(){

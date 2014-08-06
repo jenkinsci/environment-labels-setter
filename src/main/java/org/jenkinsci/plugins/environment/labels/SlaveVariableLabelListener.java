@@ -7,6 +7,7 @@ import hudson.model.Computer;
 import hudson.slaves.ComputerListener;
 import hudson.slaves.SlaveComputer;
 
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,8 +29,10 @@ public class SlaveVariableLabelListener extends ComputerListener {
                 }else{
                     finder.putLabels(c.getNode(), "");
                 }
-            }catch (Exception e){
-                Logger.getLogger(getClass().getName()).log(Level.WARNING, "", e);
+            }catch (IOException e){
+                Logger.getLogger(getClass().getName()).log(Level.WARNING, "Unable to load slave environment", e);
+            } catch (InterruptedException e) {
+                Logger.getLogger(getClass().getName()).log(Level.WARNING, "Interrupted loading slave environment", e);
             }
         }
     }

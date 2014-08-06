@@ -9,7 +9,6 @@ import hudson.model.Node;
 import hudson.model.Slave;
 import hudson.model.labels.LabelAtom;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -28,16 +27,42 @@ public class EnvironmentLabelsFinderTest {
     @Rule public JenkinsRule j = new JenkinsRule();
 
     @Test
-    public void testOnOnline() throws IOException, InterruptedException, Exception{
+    public void contributeAllLabels() throws Exception {
        Slave contributingSlave = j.createOnlineSlave(null, new EnvVars(
                "JENKINS_SLAVE_LABELS", "testlabel1 testlabel2"
        ));
+       contributingSlave.getNodeProperties().add(new PerNodeConfig());
 
        assertEquals(labels("slave0", "testlabel1", "testlabel2"), contributingSlave.getAssignedLabels());
+    }
 
-       Slave notContributingSlave = j.createOnlineSlave();
+    @Test
+    public void appendLabels() throws Exception {
+       Slave slave = j.createOnlineSlave(null, new EnvVars(
+               "JENKINS_SLAVE_LABELS", "env_label common_label"
+       ));
+       slave.setLabelString("hardcoded_label common_label");
+       slave.getNodeProperties().add(new PerNodeConfig());
 
-       assertEquals(labels("slave1"), notContributingSlave.getAssignedLabels());
+       assertEquals(labels("slave0", "env_label", "common_label", "hardcoded_label"), slave.getAssignedLabels());
+    }
+
+    @Test
+    public void ignoreLabelsForNodesNotConfiguredToAccept() throws Exception {
+        Slave slave = j.createOnlineSlave(null, new EnvVars(
+                "JENKINS_SLAVE_LABELS", "env_label common_label"
+        ));
+        slave.setLabelString("hardcoded_label common_label");
+
+        assertEquals(labels("slave0", "hardcoded_label", "common_label"), slave.getAssignedLabels());
+    }
+
+    @Test
+    public void doNotTouchLabelsWhenNothingIsContributed() throws Exception {
+        Slave slave = j.createOnlineSlave();
+        slave.setLabelString("hardcoded_label");
+
+        assertEquals(labels("slave0", "hardcoded_label"), slave.getAssignedLabels());
     }
 
     @Test
