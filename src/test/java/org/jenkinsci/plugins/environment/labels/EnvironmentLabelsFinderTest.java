@@ -1,5 +1,8 @@
 package org.jenkinsci.plugins.environment.labels;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import hudson.EnvVars;
 import hudson.model.LabelFinder;
 import hudson.model.Node;
@@ -13,23 +16,26 @@ import java.util.Set;
 
 import jenkins.model.Jenkins;
 
+import org.junit.Rule;
 import org.junit.Test;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.JenkinsRule;
 
 /**
  * @author lucinka
  */
-public class EnvironmentLabelsFinderTest extends HudsonTestCase{
+public class EnvironmentLabelsFinderTest {
+
+    @Rule public JenkinsRule j = new JenkinsRule();
 
     @Test
     public void testOnOnline() throws IOException, InterruptedException, Exception{
-       Slave contributingSlave = createOnlineSlave(null, new EnvVars(
+       Slave contributingSlave = j.createOnlineSlave(null, new EnvVars(
                "JENKINS_SLAVE_LABELS", "testlabel1 testlabel2"
        ));
 
        assertEquals(labels("slave0", "testlabel1", "testlabel2"), contributingSlave.getAssignedLabels());
 
-       Slave notContributingSlave = createOnlineSlave();
+       Slave notContributingSlave = j.createOnlineSlave();
 
        assertEquals(labels("slave1"), notContributingSlave.getAssignedLabels());
     }
@@ -37,8 +43,8 @@ public class EnvironmentLabelsFinderTest extends HudsonTestCase{
     @Test
     public void testRemoveComputer() throws Exception{
         Map<Node, String> cashedLabels = LabelFinder.all().get(EnvironmentLabelsFinder.class).getCashedLabels();
-        Slave slave1 = createOnlineSlave();
-        Slave slave2 = createOnlineSlave();
+        Slave slave1 = j.createOnlineSlave();
+        Slave slave2 = j.createOnlineSlave();
         assertTrue("All slaves should be cashed.", cashedLabels.containsKey(slave1) && cashedLabels.containsKey(slave2));
         Jenkins.getInstance().removeNode(slave2);
         cashedLabels = LabelFinder.all().get(EnvironmentLabelsFinder.class).getCashedLabels();
@@ -49,7 +55,7 @@ public class EnvironmentLabelsFinderTest extends HudsonTestCase{
     private Set<LabelAtom> labels(String... atoms) {
         HashSet<LabelAtom> ret = new HashSet<LabelAtom>(atoms.length);
         for (String atom: atoms) {
-            ret.add(jenkins.getLabelAtom(atom));
+            ret.add(j.jenkins.getLabelAtom(atom));
         }
 
         return ret;
