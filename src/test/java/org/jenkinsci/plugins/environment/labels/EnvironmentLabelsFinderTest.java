@@ -2,15 +2,14 @@ package org.jenkinsci.plugins.environment.labels;
 
 import hudson.EnvVars;
 import hudson.model.LabelFinder;
-import hudson.model.TaskListener;
 import hudson.model.Node;
 import hudson.model.Slave;
 import hudson.model.labels.LabelAtom;
-import hudson.slaves.ComputerListener;
 
 import java.io.IOException;
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import jenkins.model.Jenkins;
 
@@ -24,19 +23,15 @@ public class EnvironmentLabelsFinderTest extends HudsonTestCase{
 
     @Test
     public void testOnOnline() throws IOException, InterruptedException, Exception{
-       EnvVars vars = new EnvVars();
-       vars.put("JENKINS_SLAVE_LABELS", "testlabe11 testlabel2");
-       Slave slave = createOnlineSlave(null, vars);
-       ComputerListener.all().get(SlaveVariableLabelListener.class).onOnline(slave.toComputer(), TaskListener.NULL);
-       Collection<LabelAtom> labels = LabelFinder.all().get(EnvironmentLabelsFinder.class).findLabels(slave);
-       assertTrue("Computer should contains label testlabel1.", labels.contains(Jenkins.getInstance().getLabelAtom("testlabe11")));
-       assertTrue("Computer should contains label testlabel2.", labels.contains(Jenkins.getInstance().getLabelAtom("testlabel2")));
-       Slave slave2 = createOnlineSlave();
-       System.out.println(LabelFinder.all().get(EnvironmentLabelsFinder.class).getCashedLabels());
-       labels = LabelFinder.all().get(EnvironmentLabelsFinder.class).findLabels(slave2);
-       assertFalse("Computer should not contains label testlabel1.", labels.contains(Jenkins.getInstance().getLabelAtom("testlabel1")));
-       assertFalse("Computer should not contains label testlabel2.", labels.contains(Jenkins.getInstance().getLabelAtom("testlabel2")));
+       Slave contributingSlave = createOnlineSlave(null, new EnvVars(
+               "JENKINS_SLAVE_LABELS", "testlabel1 testlabel2"
+       ));
 
+       assertEquals(labels("slave0", "testlabel1", "testlabel2"), contributingSlave.getAssignedLabels());
+
+       Slave notContributingSlave = createOnlineSlave();
+
+       assertEquals(labels("slave1"), notContributingSlave.getAssignedLabels());
     }
 
     @Test
@@ -50,6 +45,16 @@ public class EnvironmentLabelsFinderTest extends HudsonTestCase{
         assertFalse("Cashed Labels should not contains deleted slave.", cashedLabels.containsKey(slave2));
         assertTrue("Cashed Labels should contains " + slave1.getDisplayName() + ".", cashedLabels.containsKey(slave1));
     }
+
+    private Set<LabelAtom> labels(String... atoms) {
+        HashSet<LabelAtom> ret = new HashSet<LabelAtom>(atoms.length);
+        for (String atom: atoms) {
+            ret.add(jenkins.getLabelAtom(atom));
+        }
+
+        return ret;
+    }
+
 
 //    @Test
 //    public void testRenameComputer() throws Exception{
