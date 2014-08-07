@@ -47,9 +47,13 @@ public class EnvironmentLabelsFinderTest {
     @Test
     public void ignoreLabelsForNodesNotConfiguredToAccept() throws Exception {
         Slave slave = slaveContributing("env_label common_label");
+
+        assertEquals(labels("slave0"), slave.getAssignedLabels());
+
+        slave = slaveContributing("env_label common_label");
         slave.setLabelString("hardcoded_label common_label");
 
-        assertEquals(labels("slave0", "hardcoded_label", "common_label"), slave.getAssignedLabels());
+        assertEquals(labels("slave1", "hardcoded_label", "common_label"), slave.getAssignedLabels());
     }
 
     @Test
