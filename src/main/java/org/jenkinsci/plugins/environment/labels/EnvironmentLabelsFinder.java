@@ -70,6 +70,8 @@ public class EnvironmentLabelsFinder extends LabelFinder {
                     String labels = Util.fixEmpty(slaveComputer.getEnvironment().get("JENKINS_SLAVE_LABELS"));
                     if (labels != null) {
                         finder().cashedLabels.put(c.getNode(), labels);
+                    } else {
+                        finder().cashedLabels.remove(c.getNode());
                     }
                 } catch (IOException e) {
                     Logger.getLogger(getClass().getName()).log(Level.WARNING, "Unable to load slave environment", e);

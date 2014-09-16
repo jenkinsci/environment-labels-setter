@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import hudson.EnvVars;
 import hudson.model.LabelFinder;
+import hudson.model.Computer;
 import hudson.model.Node;
 import hudson.model.Slave;
 import hudson.model.labels.LabelAtom;
@@ -89,11 +90,74 @@ public class EnvironmentLabelsFinderTest {
         assertTrue("Cashed Labels should contains " + slave1.getDisplayName() + ".", cashedLabels.containsKey(slave1));
     }
 
+    @Test
+    public void removeLabelsBetweenReconnects() throws Exception {
+        EnvVars vars = new EnvVars("JENKINS_SLAVE_LABELS", "a_label");
+        Node slave = j.createOnlineSlave(null, vars);
+        Computer computer = slave.toComputer();
+        allowLabelContribution(slave);
+
+        assertEquals("a_label", slave.toComputer().getEnvironment().get("JENKINS_SLAVE_LABELS"));
+        assertEquals(labels("slave0", "a_label"), slave.getAssignedLabels());
+
+        vars.remove("JENKINS_SLAVE_LABELS");
+
+        reconnect(computer);
+
+        assertEquals(null, computer.getEnvironment().get("JENKINS_SLAVE_LABELS"));
+        assertEquals(labels("slave0"), slave.getAssignedLabels());
+    }
+
+    @Test
+    public void addLabelsBetweenReconnects() throws Exception {
+        EnvVars vars = new EnvVars();
+        Node slave = j.createOnlineSlave(null, vars);
+        Computer computer = slave.toComputer();
+        allowLabelContribution(slave);
+
+        assertEquals(null, slave.toComputer().getEnvironment().get("JENKINS_SLAVE_LABELS"));
+        assertEquals(labels("slave0"), slave.getAssignedLabels());
+
+        vars.put("JENKINS_SLAVE_LABELS", "a_label");
+
+        reconnect(computer);
+
+        assertEquals("a_label", computer.getEnvironment().get("JENKINS_SLAVE_LABELS"));
+        assertEquals(labels("slave0", "a_label"), slave.getAssignedLabels());
+    }
+
+    @Test
+    public void changeLabelsBetweenReconnects() throws Exception {
+        EnvVars vars = new EnvVars("JENKINS_SLAVE_LABELS", "persistent volatile");
+        Node slave = j.createOnlineSlave(null, vars);
+        Computer computer = slave.toComputer();
+        allowLabelContribution(slave);
+
+        assertEquals("persistent volatile", slave.toComputer().getEnvironment().get("JENKINS_SLAVE_LABELS"));
+        assertEquals(labels("slave0", "persistent", "volatile"), slave.getAssignedLabels());
+
+        vars.put("JENKINS_SLAVE_LABELS", "persistent replacement");
+
+        reconnect(computer);
+
+        assertEquals("persistent replacement", computer.getEnvironment().get("JENKINS_SLAVE_LABELS"));
+        assertEquals(labels("slave0", "persistent", "replacement"), slave.getAssignedLabels());
+    }
+
+    private void reconnect(Computer computer) throws InterruptedException {
+        computer.disconnect(null);
+        computer.waitUntilOffline();
+        computer.connect(true);
+        computer.waitUntilOnline();
+
+        Thread.sleep(100); // It seems to need some time to propagate
+    }
+
     private Slave slaveContributing(String labels) throws Exception {
         return j.createOnlineSlave(null, new EnvVars("JENKINS_SLAVE_LABELS", labels));
     }
 
-    private void allowLabelContribution(Slave slave) throws IOException {
+    private void allowLabelContribution(Node slave) throws IOException {
         slave.getNodeProperties().add(new PerNodeConfig());
     }
 
