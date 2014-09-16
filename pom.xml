@@ -8,7 +8,7 @@
 
   <name>Environment labels setter</name>
   <artifactId>environment-labels-setter</artifactId>
-  <version>1.1-SNAPSHOT</version>
+  <version>1.1</version>
   <packaging>hpi</packaging>
   <url>https://wiki.jenkins-ci.org/display/JENKINS/Environment+labels+setter</url>
   
@@ -31,6 +31,7 @@
     <connection>scm:git:ssh://github.com/jenkinsci/environment-labels-setter.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/jenkinsci/environment-labels-setter.git</developerConnection>
     <url>https://github.com/jenkinsci/environment-labels-setter.git</url>
+    <tag>environment-labels-setter-1.1</tag>
   </scm>
   
 </project>
